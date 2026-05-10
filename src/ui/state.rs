@@ -1,6 +1,6 @@
 #[derive(Default)]
-pub struct State {}
+pub struct App {}
 
-pub fn new() -> State {
-    State {}
+pub fn new() -> App {
+    App {}
 }

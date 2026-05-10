@@ -1,5 +1,5 @@
-use crate::ui::{messages::Message, state::State};
+use crate::ui::{messages::Message, state::App};
 
-pub fn update(_state: &mut State, message: Message) {
+pub fn update(_state: &mut App, message: Message) {
     match message {}
 }
