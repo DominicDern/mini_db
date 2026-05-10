@@ -1,5 +1,5 @@
-use crate::Message;
-use crate::State;
+use crate::ui::messages::Message;
+use crate::ui::state::State;
 
 use iced::Element;
 use iced::widget::{container, row, text};

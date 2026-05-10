@@ -1,4 +1,4 @@
-use crate::State;
+use crate::ui::state::State;
 
 use iced::Theme;
 
