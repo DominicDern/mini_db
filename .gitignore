@@ -1,1 +1,14 @@
+# Environment
+.env
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Rust/Cargo
 /target
+
+# OS
+.DS_Store
+Thumbs.db
