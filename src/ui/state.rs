@@ -14,7 +14,7 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         Self {
-            page: Page::Home,
+            page: Page::Loading,
             pool: None,
         }
     }
@@ -49,5 +49,6 @@ pub fn new() -> (App, Task<Message>) {
 #[derive(Default)]
 pub enum Page {
     #[default]
+    Loading,
     Home,
 }
