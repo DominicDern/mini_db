@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Id {
-    id: u32,
+    pub id: u32,
 }
 
 impl Id {
