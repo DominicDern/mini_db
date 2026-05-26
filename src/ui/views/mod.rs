@@ -1,9 +1,9 @@
 mod home;
 
+use iced::Element;
+
 use crate::ui::messages::Message;
 use crate::ui::state::{App, Page};
-
-use iced::Element;
 
 // View dispatcher
 pub fn view(state: &App) -> Element<'_, Message> {
