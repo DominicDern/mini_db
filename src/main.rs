@@ -5,7 +5,6 @@ mod ui;
 
 use crate::startup::startup;
 
-#[tokio::main]
-async fn main() -> iced::Result {
-    startup().await
+fn main() -> iced::Result {
+    startup()
 }
