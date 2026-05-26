@@ -8,7 +8,7 @@ pub struct Id {
 
 impl Id {
     pub fn new(current_containers: &mut Vec<Id>) -> Self {
-        let id: u32 = random();
+        let id = random();
         let mut id = Self { id };
         while current_containers.contains(&id) {
             id.id += 1;

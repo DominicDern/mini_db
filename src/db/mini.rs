@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::id::Id;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Mini {
     name: String,
     id: Id,
