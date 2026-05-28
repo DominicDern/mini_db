@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-iced = "0.14.0"
+iced = { version = "0.14.0", features = ["canvas"] }
+iced_aw = { version = "0.14.1", features = ["spinner"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite", "macros"] }
 tokio = { version = "1.52.3", features = ["full"] }
 dotenvy = "0.15.7"

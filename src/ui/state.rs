@@ -6,18 +6,10 @@ use crate::{
     ui::messages::{DBMessage, Message},
 };
 
+#[derive(Default)]
 pub struct App {
     pub pool: Option<SqlitePool>, // DB pool
     pub page: Page,               // Current page being displayed
-}
-
-impl Default for App {
-    fn default() -> Self {
-        Self {
-            page: Page::Loading,
-            pool: None,
-        }
-    }
 }
 
 pub fn new() -> (App, Task<Message>) {
