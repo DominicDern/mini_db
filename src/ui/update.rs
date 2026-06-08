@@ -1,14 +1,14 @@
-use crate::db::{get_all_minis, insert_mini};
+use std::fmt::Write;
+
+use iced::Task;
+use tracing::{error, info};
+
+use crate::db::{get_all_minis, insert_mini, mini, remove_all_matching_minis};
 use crate::ui::state::Page;
 use crate::ui::{
     messages::{DBMessage, Message},
     state::App,
 };
-
-use std::fmt::Write;
-
-use iced::Task;
-use tracing::info;
 
 pub fn update(state: &mut App, message: Message) -> Task<Message> {
     match message {
@@ -26,17 +26,17 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                     let result = insert_mini(&pool, name, base_size).await;
                     match result {
                         Ok(mini) => {
-                            println!("Added: {:?}", mini);
+                            info!("Added: {:?}", mini);
                             Message::DB(DBMessage::MiniAdded(Ok(mini)))
                         }
                         Err(err) => {
-                            println!("Error adding: {err}");
+                            error!("Error adding: {err}");
                             Message::DB(DBMessage::MiniAdded(Err(err.to_string())))
                         }
                     }
                 }),
                 None => {
-                    println!("No pool for minis.");
+                    error!("No pool for minis.");
                     Task::none()
                 }
             },

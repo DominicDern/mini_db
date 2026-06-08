@@ -4,7 +4,7 @@ pub mod id;
 pub mod mini;
 pub mod terrain;
 
-use sqlx::SqlitePool;
+use sqlx::{SqlitePool, query};
 
 use mini::Mini;
 
@@ -15,12 +15,13 @@ pub async fn insert_mini(
     name: String,
     base_size: u16,
 ) -> Result<Mini, sqlx::Error> {
-    let result =
-        sqlx::query("INSERT INTO minis (name, number_printed, base_size) VALUES (?, 0, ?)")
-            .bind(&name)
-            .bind(base_size)
-            .execute(pool)
-            .await?;
+    let result = sqlx::query!(
+        "INSERT INTO minis (name, number_printed, base_size) VALUES (?, 0, ?)",
+        name,
+        base_size
+    )
+    .execute(pool)
+    .await?;
 
     Ok(Mini {
         id: result.last_insert_rowid(),

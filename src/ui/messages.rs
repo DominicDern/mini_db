@@ -1,3 +1,5 @@
+use sqlx::{Error, SqlitePool};
+
 use crate::{
     db::{id::Id, mini::Mini},
     ui::state::App,
@@ -19,7 +21,7 @@ pub enum LogicMessage {}
 #[derive(Debug, Clone)]
 pub enum DBMessage {
     // DB configuration
-    PoolReady(sqlx::SqlitePool),
+    PoolReady(SqlitePool),
 
     // Commands (outgoing)
     AddMini(String, u16), // name, base_size
