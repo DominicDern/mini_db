@@ -14,6 +14,7 @@ use crate::{db::connection::create_pool, startup::startup};
 fn main() -> iced::Result {
     // Logging setup
     tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .with_max_level(Level::DEBUG)
         .init();
 
