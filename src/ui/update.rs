@@ -41,12 +41,46 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 }
             },
 
+            DBMessage::RemoveAllMatchingMinis(name) => match state.pool.clone() {
+                Some(pool) => Task::future(async move {
+                    let result = remove_all_matching_minis(&pool, &name).await; // TODO
+                    // set to dynamic
+                    match result {
+                        Ok(minis_removed) => {
+                            info!("{minis_removed} minis removed");
+                            Message::DB(DBMessage::MinisRemoved(Ok((name, minis_removed))))
+                        }
+                        Err(err) => {
+                            error!("Error romoving {name} from minis");
+                            Message::DB(DBMessage::MinisRemoved(Err(err.to_string())))
+                        }
+                    }
+                }),
+                None => {
+                    error!("No pool for minis.");
+                    Task::none()
+                }
+            },
+
             DBMessage::DatabaseLoaded(mut app) => {
                 app.page = Page::Home;
                 Task::none()
             }
 
             DBMessage::MiniAdded(_) => Task::none(),
+            DBMessage::MinisRemoved(result) => match result {
+                Ok(minis_removed) => {
+                    info!(
+                        "{} minis removed of name {}",
+                        minis_removed.1, minis_removed.0
+                    );
+                    Task::none()
+                }
+                Err(err) => {
+                    error!("Error removing {}", err);
+                    Task::none()
+                }
+            },
             DBMessage::GetAllMinis => match state.pool.clone() {
                 Some(pool) => Task::future(async move {
                     let result = get_all_minis(&pool).await;
