@@ -4,7 +4,11 @@ use crate::ui::{
     messages::{DBMessage, Message},
     state::App,
 };
+
+use std::fmt::Write;
+
 use iced::Task;
+use tracing::info;
 
 pub fn update(state: &mut App, message: Message) -> Task<Message> {
     match message {
@@ -59,9 +63,12 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
             DBMessage::AllMinisRetrieved(result) => {
                 match result {
                     Ok(minis) => {
+                        let mut result = String::new();
+                        writeln!(result, "Got minis:").unwrap();
                         for mini in minis {
-                            println!("{:?}", mini);
+                            writeln!(result, "{:?}", mini).unwrap();
                         }
+                        info!("{result}");
                     }
                     Err(err) => println!("{err}"),
                 }
