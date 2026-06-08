@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS minis (
     base_size      INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS terrain (
+CREATE TABLE IF NOT EXISTS terrains (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     name           TEXT    NOT NULL,
     number_printed INTEGER NOT NULL DEFAULT 0
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS mini_locations (
 );
 
 CREATE TABLE IF NOT EXISTS terrain_locations (
-    terrain_id   INTEGER NOT NULL REFERENCES terrain(id),
+    terrain_id   INTEGER NOT NULL REFERENCES terrains(id),
     container_id INTEGER NOT NULL REFERENCES containers(id),
     PRIMARY KEY (terrain_id, container_id)
 );

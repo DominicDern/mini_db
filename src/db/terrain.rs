@@ -1,10 +1,11 @@
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
+
 use crate::db::id::Id;
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, FromRow, Debug, Clone)]
 pub struct Terrain {
-    name: String,
-    id: Id,
-    number_printed: u16,
+    pub id: Id,
+    pub name: String,
+    pub number_printed: u16,
 }

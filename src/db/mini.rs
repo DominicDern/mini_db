@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 use crate::db::id::Id;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, FromRow, Debug, Clone)]
 pub struct Mini {
-    name: String,
-    id: Id,
-    number_printed: u16,
-    base_size: u16,
+    pub id: Id,
+    pub name: String,
+    pub number_printed: u16,
+    pub base_size: u16,
 }
