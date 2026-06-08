@@ -6,7 +6,7 @@ mod ui;
 use sqlx::Sqlite;
 use sqlx::migrate::MigrateDatabase;
 use sqlx::sqlite::SqlitePoolOptions;
-use tracing::{Level, info};
+use tracing::{Level, error, info};
 use tracing_subscriber::FmtSubscriber;
 
 use crate::{db::connection::create_pool, startup::startup};
@@ -23,9 +23,14 @@ fn main() -> iced::Result {
         let url = std::env::var("DATABASE_URL").unwrap();
         println!("Running migrations on: {url}");
         if !Sqlite::database_exists(&url).await.unwrap_or(false) {
-            Sqlite::create_database(&url)
-                .await
-                .expect("Failed to create DB");
+            match Sqlite::create_database(&url).await {
+                Ok(_) => {
+                    info!("Database created");
+                }
+                Err(_) => {
+                    error!("Failed to create database");
+                }
+            }
         }
         let pool = SqlitePoolOptions::new()
             .max_connections(1)
