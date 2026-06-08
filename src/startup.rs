@@ -5,6 +5,8 @@ use crate::ui::views::view;
 use iced::application;
 
 pub fn startup() -> iced::Result {
+    dotenvy::dotenv().ok();
+
     // UI startup
     application(new, update, view).theme(theme).run()
 }

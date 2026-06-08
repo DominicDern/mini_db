@@ -1,4 +1,7 @@
-use crate::db::{id::Id, mini::Mini};
+use crate::{
+    db::{id::Id, mini::Mini},
+    ui::state::App,
+};
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -19,10 +22,11 @@ pub enum DBMessage {
     PoolReady(sqlx::SqlitePool),
 
     // Commands (outgoing)
-    LoadDatabase,
-    AddMini(String, Id), // name, base_size
+    AddMini(String, u16), // name, base_size
+    GetAllMinis,
 
     // Results (incoming)
-    DatabaseLoaded,
-    MiniAdded(Result<Id, String>),
+    DatabaseLoaded(App),
+    MiniAdded(Result<Mini, String>),
+    AllMinisRetrieved(Result<Vec<Mini>, String>),
 }
