@@ -23,10 +23,12 @@ pub enum DBMessage {
 
     // Commands (outgoing)
     AddMini(String, u16), // name, base_size
+    RemoveAllMatchingMinis(String),
     GetAllMinis,
 
     // Results (incoming)
     DatabaseLoaded(App),
     MiniAdded(Result<Mini, String>),
+    MinisRemoved(Result<(String, u64), String>), // (name of removed mini, number of minis removed), error string
     AllMinisRetrieved(Result<Vec<Mini>, String>),
 }

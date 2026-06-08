@@ -8,6 +8,9 @@ pub fn view(_state: &App) -> Element<'_, Message> {
     row![
         container(text!("HOME")),
         container(button("Add").on_press(Message::DB(DBMessage::AddMini("Test".to_string(), 32)))),
+        container(button("Remove all test minis").on_press(Message::DB(
+            DBMessage::RemoveAllMatchingMinis("Test".to_string())
+        ))),
         container(button("List").on_press(Message::DB(DBMessage::GetAllMinis)))
     ]
     .spacing(10)

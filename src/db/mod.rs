@@ -30,6 +30,14 @@ pub async fn insert_mini(
     })
 }
 
+pub async fn remove_all_matching_minis(pool: &SqlitePool, name: &str) -> Result<u64, sqlx::Error> {
+    let affected_rows = query!("DELETE FROM minis WHERE name = ?", name)
+        .execute(pool)
+        .await?
+        .rows_affected();
+    Ok(affected_rows)
+}
+
 pub async fn get_all_minis(pool: &SqlitePool) -> Result<Vec<Mini>, sqlx::Error> {
     let minis = sqlx::query_as("SELECT * FROM minis")
         .fetch_all(pool)
