@@ -11,6 +11,7 @@ use sqlx::{Sqlite, SqlitePool, migrate::MigrateDatabase};
 pub struct App {
     pub pool: Option<SqlitePool>, // DB pool
     pub page: Page,               // Current page being displayed
+    pub home_state: HomeState,
 }
 
 pub fn new() -> (App, Task<Message>) {
@@ -33,4 +34,17 @@ pub enum Page {
     Loading,
     #[default]
     Home,
+}
+
+#[derive(Debug, Clone)]
+pub struct HomeState {
+    pub name_input: String,
+}
+
+impl Default for HomeState {
+    fn default() -> Self {
+        Self {
+            name_input: "".to_string(),
+        }
+    }
 }

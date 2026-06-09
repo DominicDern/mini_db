@@ -13,7 +13,9 @@ pub enum Message {
 }
 
 #[derive(Debug, Clone)]
-pub enum UIMessage {}
+pub enum UIMessage {
+    MiniNameInputChanged(String),
+}
 
 #[derive(Debug, Clone)]
 pub enum LogicMessage {}

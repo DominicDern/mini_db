@@ -4,7 +4,8 @@ use iced::Task;
 use tracing::{error, info};
 
 use crate::db::{get_all_minis, insert_mini, mini, remove_all_matching_minis};
-use crate::ui::state::Page;
+use crate::ui::messages::UIMessage;
+use crate::ui::state::{HomeState, Page};
 use crate::ui::{
     messages::{DBMessage, Message},
     state::App,
@@ -12,7 +13,13 @@ use crate::ui::{
 
 pub fn update(state: &mut App, message: Message) -> Task<Message> {
     match message {
-        Message::UI(_) => Task::none(),
+        Message::UI(ui_msg) => match ui_msg {
+            // Mini name input in home page changed
+            UIMessage::MiniNameInputChanged(value) => {
+                state.home_state.name_input = value;
+                Task::none()
+            }
+        },
 
         Message::DB(db_msg) => match db_msg {
             DBMessage::PoolReady(pool) => {
@@ -43,11 +50,10 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
 
             DBMessage::RemoveAllMatchingMinis(name) => match state.pool.clone() {
                 Some(pool) => Task::future(async move {
-                    let result = remove_all_matching_minis(&pool, &name).await; // TODO
+                    let result = remove_all_matching_minis(&pool, &name).await;
                     // set to dynamic
                     match result {
                         Ok(minis_removed) => {
-                            info!("{minis_removed} minis removed");
                             Message::DB(DBMessage::MinisRemoved(Ok((name, minis_removed))))
                         }
                         Err(err) => {
@@ -86,9 +92,9 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                     let result = get_all_minis(&pool).await;
                     match result {
                         Ok(minis) => Message::DB(DBMessage::AllMinisRetrieved(Ok(minis))),
-                        Err(e) => {
-                            println!("Error: {e}");
-                            Message::DB(DBMessage::AllMinisRetrieved(Err(e.to_string())))
+                        Err(err) => {
+                            error!("Error: {err}");
+                            Message::DB(DBMessage::AllMinisRetrieved(Err(err.to_string())))
                         }
                     }
                 }),
@@ -104,7 +110,9 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                         }
                         info!("{result}");
                     }
-                    Err(err) => println!("{err}"),
+                    Err(err) => {
+                        error!("Error: {err}");
+                    }
                 }
                 Task::none()
             }
