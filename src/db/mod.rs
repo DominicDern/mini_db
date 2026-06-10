@@ -13,19 +13,22 @@ use terrain::Terrain;
 pub async fn insert_mini(
     pool: &SqlitePool,
     name: String,
+    file_location: Option<String>,
     base_size: u16,
 ) -> Result<Mini, sqlx::Error> {
-    let result = sqlx::query!(
-        "INSERT INTO minis (name, number_printed, base_size) VALUES (?, 0, ?)",
-        name,
-        base_size
+    let result = sqlx::query(
+        "INSERT INTO minis (name, file_location, number_printed, base_size) VALUES (?, ?, 0, ?)",
     )
+    .bind(&name)
+    .bind(&file_location)
+    .bind(base_size)
     .execute(pool)
     .await?;
 
     Ok(Mini {
         id: result.last_insert_rowid(),
         name,
+        file_location,
         number_printed: 0,
         base_size,
     })
@@ -46,15 +49,21 @@ pub async fn get_all_minis(pool: &SqlitePool) -> Result<Vec<Mini>, sqlx::Error> 
     Ok(minis)
 }
 
-pub async fn insert_terrain(pool: &SqlitePool, name: String) -> Result<Terrain, sqlx::Error> {
-    let result = sqlx::query("INSERT INTO terrain (name, number_printed) VALUES (?, 0)")
-        .bind(&name)
-        .execute(pool)
-        .await?;
+pub async fn insert_terrain(
+    pool: &SqlitePool,
+    name: String,
+    file_location: Option<String>,
+) -> Result<Terrain, sqlx::Error> {
+    let result =
+        sqlx::query("INSERT INTO terrain (name, file_location, number_printed) VALUES (?, ?, 0)")
+            .bind(&name)
+            .execute(pool)
+            .await?;
 
     Ok(Terrain {
         id: result.last_insert_rowid(),
         name,
+        file_location,
         number_printed: 0,
     })
 }

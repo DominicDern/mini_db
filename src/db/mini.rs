@@ -7,6 +7,7 @@ use crate::db::id::Id;
 pub struct Mini {
     pub id: Id,
     pub name: String,
+    pub file_location: Option<String>,
     pub number_printed: u16,
     pub base_size: u16,
 }

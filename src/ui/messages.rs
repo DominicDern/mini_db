@@ -2,7 +2,7 @@ use sqlx::{Error, SqlitePool};
 
 use crate::{
     db::{id::Id, mini::Mini},
-    ui::state::App,
+    ui::state::{App, ObjectType},
 };
 
 #[derive(Debug, Clone)]
@@ -15,6 +15,7 @@ pub enum Message {
 #[derive(Debug, Clone)]
 pub enum UIMessage {
     MiniNameInputChanged(String),
+    AddMiniTypeSelected(Option<ObjectType>),
 }
 
 #[derive(Debug, Clone)]
@@ -26,7 +27,7 @@ pub enum DBMessage {
     PoolReady(SqlitePool),
 
     // Commands (outgoing)
-    AddMini(String, u16), // name, base_size
+    AddMini(String, Option<String>, u16), // name, file location, base_size
     RemoveAllMatchingMinis(String),
     GetAllMinis,
 

@@ -36,15 +36,38 @@ pub enum Page {
     Home,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct HomeState {
-    pub name_input: String,
+    pub add_object_state: AddObjectState,
 }
 
-impl Default for HomeState {
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ObjectType {
+    #[default]
+    Mini,
+    Terrain,
+}
+
+impl std::fmt::Display for ObjectType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Mini => "Mini",
+            Self::Terrain => "Terrain",
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AddObjectState {
+    pub name_input: String,
+    pub object_type: Option<ObjectType>,
+}
+
+impl Default for AddObjectState {
     fn default() -> Self {
         Self {
             name_input: "".to_string(),
+            object_type: None,
         }
     }
 }

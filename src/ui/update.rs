@@ -3,12 +3,10 @@ use std::fmt::Write;
 use iced::Task;
 use tracing::{error, info};
 
-use crate::db::{get_all_minis, insert_mini, mini, remove_all_matching_minis};
-use crate::ui::messages::UIMessage;
-use crate::ui::state::{HomeState, Page};
+use crate::db::{get_all_minis, insert_mini, remove_all_matching_minis};
 use crate::ui::{
-    messages::{DBMessage, Message},
-    state::App,
+    messages::{DBMessage, Message, UIMessage},
+    state::{App, Page},
 };
 
 pub fn update(state: &mut App, message: Message) -> Task<Message> {
@@ -16,7 +14,11 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
         Message::UI(ui_msg) => match ui_msg {
             // Mini name input in home page changed
             UIMessage::MiniNameInputChanged(value) => {
-                state.home_state.name_input = value;
+                state.home_state.add_object_state.name_input = value;
+                Task::none()
+            }
+            UIMessage::AddMiniTypeSelected(object_type) => {
+                state.home_state.add_object_state.object_type = object_type;
                 Task::none()
             }
         },
@@ -28,9 +30,9 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 Task::none()
             }
 
-            DBMessage::AddMini(name, base_size) => match state.pool.clone() {
+            DBMessage::AddMini(name, file_location, base_size) => match state.pool.clone() {
                 Some(pool) => Task::future(async move {
-                    let result = insert_mini(&pool, name, base_size).await;
+                    let result = insert_mini(&pool, name, file_location, base_size).await;
                     match result {
                         Ok(mini) => {
                             info!("Added: {:?}", mini);
