@@ -1,8 +1,8 @@
 use crate::ui::messages::{DBMessage, Message};
 
 use iced::Task;
+use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
-use sqlx::{Sqlite, SqlitePool, migrate::MigrateDatabase};
 
 #[derive(Default, Debug, Clone)]
 pub struct App {

@@ -21,17 +21,7 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 Task::none()
             }
             UIMessage::AddMiniTypeSelected(object_type) => {
-                println!(
-                    "{:?}",
-                    &state.home_state.add_object_state.object_type.clone()
-                );
-                println!("{:?}\n", object_type.clone());
                 state.home_state.add_object_state.object_type = object_type;
-                println!(
-                    "{:?}",
-                    &state.home_state.add_object_state.object_type.clone()
-                );
-                debug!("new mini type changed");
                 Task::none()
             }
         },
