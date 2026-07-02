@@ -28,7 +28,7 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
 
         Message::DB(db_msg) => match db_msg {
             DBMessage::PoolReady(pool) => {
-                println!("pool ready");
+                info!("pool ready");
                 state.pool = Some(pool);
                 Task::none()
             }

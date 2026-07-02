@@ -1,8 +1,6 @@
 use iced::Element;
 use iced::widget::{button, container, pick_list, row, text, text_input};
 
-use tracing::debug;
-
 use crate::ui::messages::{DBMessage, Message, UIMessage};
 use crate::ui::state::{App, ObjectType};
 
