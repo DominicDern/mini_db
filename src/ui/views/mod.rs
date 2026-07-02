@@ -1,3 +1,4 @@
+mod add_object;
 mod home;
 mod loading;
 

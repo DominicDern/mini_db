@@ -14,5 +14,3 @@ pub struct ItemLocation {
     pub container_id: Id,
     pub container_name: String,
 }
-
-pub enum StoredItem {}

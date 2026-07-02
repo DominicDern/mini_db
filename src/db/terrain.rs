@@ -7,5 +7,6 @@ use crate::db::id::Id;
 pub struct Terrain {
     pub id: Id,
     pub name: String,
+    pub file_location: Option<String>,
     pub number_printed: u16,
 }
