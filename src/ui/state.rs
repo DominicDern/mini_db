@@ -1,7 +1,4 @@
-use crate::{
-    db::connection::create_pool,
-    ui::messages::{DBMessage, Message},
-};
+use crate::ui::messages::{DBMessage, Message};
 
 use iced::Task;
 use sqlx::sqlite::SqlitePoolOptions;

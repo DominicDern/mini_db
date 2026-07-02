@@ -55,7 +55,7 @@ pub async fn insert_terrain(
     file_location: Option<String>,
 ) -> Result<Terrain, sqlx::Error> {
     let result =
-        sqlx::query("INSERT INTO terrain (name, file_location, number_printed) VALUES (?, ?, 0)")
+        sqlx::query("INSERT INTO terrains (name, file_location, number_printed) VALUES (?, ?, 0)")
             .bind(&name)
             .execute(pool)
             .await?;
@@ -68,11 +68,20 @@ pub async fn insert_terrain(
     })
 }
 
+pub async fn remove_all_matching_terrain(
+    pool: &SqlitePool,
+    name: &str,
+) -> Result<u64, sqlx::Error> {
+    let affected_rows = query!("DELETE FROM terrains WHERE name = ?", name)
+        .execute(pool)
+        .await?
+        .rows_affected();
+    Ok(affected_rows)
+}
+
 pub async fn get_all_terrain(pool: &SqlitePool) -> Result<Vec<Terrain>, sqlx::Error> {
-    let terrain = sqlx::query_as("SELECT * FROM terrain")
+    let terrain = sqlx::query_as("SELECT * FROM terrains")
         .fetch_all(pool)
         .await?;
     Ok(terrain)
 }
-
-pub fn startup() {}
