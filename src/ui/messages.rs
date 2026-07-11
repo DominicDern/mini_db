@@ -1,8 +1,7 @@
 use sqlx::SqlitePool;
 
 use crate::{
-    db::mini::Mini,
-    db::terrain::Terrain,
+    db::{container::Container, mini::Mini, terrain::Terrain},
     ui::state::{App, ObjectType},
 };
 
@@ -15,7 +14,7 @@ pub enum Message {
 
 #[derive(Debug, Clone)]
 pub enum UIMessage {
-    MiniNameInputChanged(String),
+    MiniNameInputChanged(String), // new input string
     AddMiniTypeSelected(Option<ObjectType>),
 }
 
@@ -29,18 +28,20 @@ pub enum DBMessage {
 
     // Commands (outgoing)
     AddMini(String, Option<String>, u16), // name, file location, base_size
-    AddTerrain(String, Option<String>),   // name, file location
-    RemoveAllMatchingMinis(String),
-    RemoveAllMatchingTerrain(String),
+    RemoveAllMatchingMinis(String),       // name
     GetAllMinis,
+    AddTerrain(String, Option<String>), // name, file location
+    RemoveAllMatchingTerrain(String),   // name
     GetAllTerrain,
+    AddContainer(String, Option<i64>), // name, parent_id
 
     // Results (incoming)
     DatabaseLoaded(App),
-    MiniAdded(Result<Mini, String>),
+    MiniAdded(Result<Mini, String>), // <Mini, Error string>
     MinisRemoved(Result<(String, u64), String>), // (name of removed mini, number of minis removed), error string
-    TerrainAdded(Result<Terrain, String>),
+    AllMinisRetrieved(Result<Vec<Mini>, String>), // < Minis, Error string >
+    TerrainAdded(Result<Terrain, String>),       // <Terrain, Error string>
     TerrainRemoved(Result<(String, u64), String>), // (name of removed mini, number of minis removed), error string
-    AllMinisRetrieved(Result<Vec<Mini>, String>),
-    AllTerrainRetrieved(Result<Vec<Terrain>, String>),
+    AllTerrainRetrieved(Result<Vec<Terrain>, String>), // <Terrains, Error string>
+    ContainerAdded(Result<Container, String>),     // <Container, Error string>
 }

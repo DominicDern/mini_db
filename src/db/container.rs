@@ -3,11 +3,11 @@ use sqlx::FromRow;
 
 use crate::db::id::Id;
 
-#[derive(Serialize, Deserialize, FromRow, Debug)]
+#[derive(Serialize, Deserialize, FromRow, Debug, Clone)]
 pub struct Container {
-    id: Id,
-    name: String,
-    parent_id: Option<Id>,
+    pub id: Id,
+    pub name: String,
+    pub parent_id: Option<Id>,
 }
 
 pub struct ItemLocation {

@@ -4,8 +4,8 @@ use iced::Task;
 use tracing::{debug, error, info};
 
 use crate::db::{
-    get_all_minis, get_all_terrain, insert_mini, insert_terrain, remove_all_matching_minis,
-    remove_all_matching_terrain,
+    get_all_minis, get_all_terrain, insert_container, insert_mini, insert_terrain,
+    remove_all_matching_minis, remove_all_matching_terrain,
 };
 use crate::ui::{
     messages::{DBMessage, Message, UIMessage},
@@ -33,6 +33,7 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 Task::none()
             }
 
+            // Commands (incoming)
             DBMessage::AddMini(name, file_location, base_size) => match state.pool.clone() {
                 Some(pool) => Task::future(async move {
                     let result = insert_mini(&pool, name, file_location, base_size).await;
@@ -73,6 +74,20 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 }
             },
 
+            DBMessage::GetAllMinis => match state.pool.clone() {
+                Some(pool) => Task::future(async move {
+                    let result = get_all_minis(&pool).await;
+                    match result {
+                        Ok(minis) => Message::DB(DBMessage::AllMinisRetrieved(Ok(minis))),
+                        Err(err) => {
+                            error!("Error: {err}");
+                            Message::DB(DBMessage::AllMinisRetrieved(Err(err.to_string())))
+                        }
+                    }
+                }),
+                None => Task::none(),
+            },
+
             DBMessage::AddTerrain(name, file_location) => match state.pool.clone() {
                 Some(pool) => Task::future(async move {
                     let result = insert_terrain(&pool, name, file_location).await;
@@ -83,27 +98,7 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                         }
                         Err(err) => {
                             error!("Error adding: {err}");
-                            Message::DB(DBMessage::MiniAdded(Err(err.to_string())))
-                        }
-                    }
-                }),
-                None => {
-                    error!("No pool for minis.");
-                    Task::none()
-                }
-            },
-
-            DBMessage::RemoveAllMatchingMinis(name) => match state.pool.clone() {
-                Some(pool) => Task::future(async move {
-                    let result = remove_all_matching_terrain(&pool, &name).await;
-                    // set to dynamic
-                    match result {
-                        Ok(minis_removed) => {
-                            Message::DB(DBMessage::TerrainRemoved(Ok((name, minis_removed))))
-                        }
-                        Err(_) => {
-                            error!("Error romoving {name} from terrains");
-                            Message::DB(DBMessage::MinisRemoved(Err("hi".to_string())))
+                            Message::DB(DBMessage::TerrainAdded(Err(err.to_string())))
                         }
                     }
                 }),
@@ -128,11 +123,39 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                     }
                 }),
                 None => {
-                    error!("No pool for minis.");
+                    error!("No pool to add to");
+                    Task::none()
+                }
+            },
+            DBMessage::GetAllTerrain => match state.pool.clone() {
+                Some(pool) => Task::future(async move {
+                    let result = get_all_terrain(&pool).await;
+                    match result {
+                        Ok(minis) => Message::DB(DBMessage::AllTerrainRetrieved(Ok(minis))),
+                        Err(err) => {
+                            error!("Error: {err}");
+                            Message::DB(DBMessage::AllTerrainRetrieved(Err(err.to_string())))
+                        }
+                    }
+                }),
+                None => Task::none(),
+            },
+
+            DBMessage::AddContainer(name, parent_id) => match state.pool.clone() {
+                Some(pool) => Task::future(async move {
+                    let result = insert_container(&pool, name, parent_id).await;
+                    match result {
+                        Ok(container) => Message::DB(DBMessage::ContainerAdded(Ok(container))),
+                        Err(err) => Message::DB(DBMessage::ContainerAdded(Err(err.to_string()))),
+                    }
+                }),
+                None => {
+                    error!("No pool to add to");
                     Task::none()
                 }
             },
 
+            // Results (outgoing)
             DBMessage::DatabaseLoaded(mut app) => {
                 app.page = Page::Home;
                 Task::none()
@@ -198,32 +221,17 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 }
                 Task::none()
             }
-            DBMessage::GetAllMinis => match state.pool.clone() {
-                Some(pool) => Task::future(async move {
-                    let result = get_all_minis(&pool).await;
-                    match result {
-                        Ok(minis) => Message::DB(DBMessage::AllMinisRetrieved(Ok(minis))),
-                        Err(err) => {
-                            error!("Error: {err}");
-                            Message::DB(DBMessage::AllMinisRetrieved(Err(err.to_string())))
-                        }
+            DBMessage::ContainerAdded(container) => {
+                match container {
+                    Ok(container) => {
+                        info!("Container added: {:?}", container);
                     }
-                }),
-                None => Task::none(),
-            },
-            DBMessage::GetAllTerrain => match state.pool.clone() {
-                Some(pool) => Task::future(async move {
-                    let result = get_all_terrain(&pool).await;
-                    match result {
-                        Ok(minis) => Message::DB(DBMessage::AllTerrainRetrieved(Ok(minis))),
-                        Err(err) => {
-                            error!("Error: {err}");
-                            Message::DB(DBMessage::AllTerrainRetrieved(Err(err.to_string())))
-                        }
+                    Err(err) => {
+                        error!("Error adding a container!\nError: {err}");
                     }
-                }),
-                None => Task::none(),
-            },
+                }
+                Task::none()
+            }
         },
     }
 }

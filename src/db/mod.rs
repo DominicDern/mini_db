@@ -4,11 +4,14 @@ pub mod id;
 pub mod mini;
 pub mod terrain;
 
+use iced::window;
 use sqlx::{SqlitePool, query};
 
 use mini::Mini;
 
 use terrain::Terrain;
+
+use crate::db::container::Container;
 
 pub async fn insert_mini(
     pool: &SqlitePool,
@@ -84,4 +87,94 @@ pub async fn get_all_terrain(pool: &SqlitePool) -> Result<Vec<Terrain>, sqlx::Er
         .fetch_all(pool)
         .await?;
     Ok(terrain)
+}
+
+pub struct ContainerContents {
+    pub container: Container,
+    pub child_containers: Vec<Container>,
+    pub minis: Vec<Mini>,
+    pub terrain: Vec<Terrain>,
+}
+
+pub async fn get_container_contents(
+    pool: &SqlitePool,
+    container_id: i64,
+) -> Result<ContainerContents, sqlx::Error> {
+    let container = sqlx::query_as!(
+        Container,
+        "SELECT id, name, parent_id FROM containers WHERE id = ?",
+        container_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let child_containers = sqlx::query_as!(
+        Container,
+        "SELECT id, name, parent_id FROM containers WHERE parent_id = ?",
+        container_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let minis = sqlx::query_as!(
+        Mini,
+        r#"SELECT m.id, m.name, m.file_location,
+        m.number_printed as "number_printed: u16",
+        m.base_size as "base_size: u16"
+        FROM minis m
+        JOIN mini_locations ml ON ml.mini_id = m.id
+        WHERE ml.container_id = ?"#,
+        container_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let terrain = sqlx::query_as!(
+        Terrain,
+        r#"SELECT t.id, t.name, t.file_location,
+        t.number_printed as "number_printed: u16"
+        FROM terrains t
+        JOIN terrain_locations tl ON tl.terrain_id = t.id
+        WHERE tl.container_id = ?"#,
+        container_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(ContainerContents {
+        container,
+        child_containers,
+        minis,
+        terrain,
+    })
+}
+
+pub async fn insert_container(
+    pool: &SqlitePool,
+    name: String,
+    parent_id: Option<i64>,
+) -> Result<Container, sqlx::Error> {
+    let id = sqlx::query!(
+        "INSERT INTO containers (name, parent_id) VALUES (?, ?)",
+        name,
+        parent_id
+    )
+    .execute(pool)
+    .await?
+    .last_insert_rowid();
+
+    Ok(Container {
+        id,
+        name,
+        parent_id,
+    })
+}
+
+pub async fn get_root_containers(pool: &SqlitePool) -> Result<Vec<Container>, sqlx::Error> {
+    sqlx::query_as!(
+        Container,
+        "SELECT id, name, parent_id FROM containers WHERE parent_id IS NULL"
+    )
+    .fetch_all(pool)
+    .await
 }
