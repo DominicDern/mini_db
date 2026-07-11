@@ -1,7 +1,7 @@
 use sqlx::SqlitePool;
 
 use crate::{
-    db::{container::Container, mini::Mini, terrain::Terrain},
+    db::{ContainerContents, container::Container, id::Id, mini::Mini, terrain::Terrain},
     ui::state::{App, ObjectType},
 };
 
@@ -16,6 +16,15 @@ pub enum Message {
 pub enum UIMessage {
     MiniNameInputChanged(String), // new input string
     AddMiniTypeSelected(Option<ObjectType>),
+
+    // Navigation
+    NavigateHome,
+    NavigateContainers,
+
+    // Container tree / detail
+    ContainerExpandToggled(Id), // expand/collapse a node in the tree
+    ContainerSelected(Id),      // click a node's name to select it
+    ContainerNameInputChanged(String), // "add container" name field
 }
 
 #[derive(Debug, Clone)]
@@ -33,7 +42,9 @@ pub enum DBMessage {
     AddTerrain(String, Option<String>), // name, file location
     RemoveAllMatchingTerrain(String),   // name
     GetAllTerrain,
-    AddContainer(String, Option<i64>), // name, parent_id
+    AddContainer(String, Option<Id>), // name, parent_id
+    GetAllContainers,                 // load/refresh the whole container forest
+    GetContainerContents(Id),         // load detail (children/minis/terrain) for one container
 
     // Results (incoming)
     DatabaseLoaded(App),
@@ -44,4 +55,6 @@ pub enum DBMessage {
     TerrainRemoved(Result<(String, u64), String>), // (name of removed mini, number of minis removed), error string
     AllTerrainRetrieved(Result<Vec<Terrain>, String>), // <Terrains, Error string>
     ContainerAdded(Result<Container, String>),     // <Container, Error string>
+    AllContainersRetrieved(Result<Vec<Container>, String>), // whole forest, flat
+    ContainerContentsRetrieved(Result<ContainerContents, String>), // detail for selected container
 }

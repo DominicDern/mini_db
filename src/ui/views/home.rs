@@ -8,6 +8,7 @@ pub fn view(state: &App) -> Element<'_, Message> {
     let object_types = [ObjectType::Mini, ObjectType::Terrain];
     row![
         container(text!("HOME")),
+        container(button("Containers").on_press(Message::UI(UIMessage::NavigateContainers))),
         container(
             text_input(
                 "Input name here",

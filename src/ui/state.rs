@@ -1,3 +1,8 @@
+use std::collections::HashSet;
+
+use crate::db::container::ContainerNode;
+use crate::db::id::Id;
+use crate::db::ContainerContents;
 use crate::ui::messages::{DBMessage, Message};
 
 use iced::Task;
@@ -9,6 +14,8 @@ pub struct App {
     pub pool: Option<SqlitePool>, // DB pool
     pub page: Page,               // Current page being displayed
     pub home_state: HomeState,
+    pub containers: Vec<ContainerNode>, // Full container forest (all roots + descendants)
+    pub container_state: ContainerState,
 }
 
 pub fn new() -> (App, Task<Message>) {
@@ -31,6 +38,7 @@ pub enum Page {
     Loading,
     #[default]
     Home,
+    Containers,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -65,6 +73,30 @@ impl Default for AddObjectState {
         Self {
             name_input: "".to_string(),
             object_type: None,
+        }
+    }
+}
+
+/// UI state for the containers page: which node is selected, which nodes are
+/// expanded in the tree, the currently-loaded detail contents for the
+/// selection, and the inline "add container" form.
+#[derive(Debug, Clone, Default)]
+pub struct ContainerState {
+    pub selected: Option<Id>,
+    pub expanded: HashSet<Id>,
+    pub contents: Option<ContainerContents>,
+    pub add_container_state: AddContainerState,
+}
+
+#[derive(Debug, Clone)]
+pub struct AddContainerState {
+    pub name_input: String,
+}
+
+impl Default for AddContainerState {
+    fn default() -> Self {
+        Self {
+            name_input: "".to_string(),
         }
     }
 }

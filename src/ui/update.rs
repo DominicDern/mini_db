@@ -4,7 +4,8 @@ use iced::Task;
 use tracing::{debug, error, info};
 
 use crate::db::{
-    get_all_minis, get_all_terrain, insert_container, insert_mini, insert_terrain,
+    container::build_forest, get_all_containers, get_all_minis, get_all_terrain,
+    get_container_contents, insert_container, insert_mini, insert_terrain,
     remove_all_matching_minis, remove_all_matching_terrain,
 };
 use crate::ui::{
@@ -24,13 +25,48 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 state.home_state.add_object_state.object_type = object_type;
                 Task::none()
             }
+
+            UIMessage::NavigateHome => {
+                state.page = Page::Home;
+                Task::none()
+            }
+            UIMessage::NavigateContainers => {
+                state.page = Page::Containers;
+                Task::none()
+            }
+
+            UIMessage::ContainerExpandToggled(id) => {
+                if !state.container_state.expanded.remove(&id) {
+                    state.container_state.expanded.insert(id);
+                }
+                Task::none()
+            }
+            UIMessage::ContainerSelected(id) => {
+                state.container_state.selected = Some(id);
+                // Clear stale detail while the fresh contents load.
+                state.container_state.contents = None;
+                Task::future(async move {
+                    Message::DB(DBMessage::GetContainerContents(id))
+                })
+            }
+            UIMessage::ContainerNameInputChanged(value) => {
+                state.container_state.add_container_state.name_input = value;
+                Task::none()
+            }
         },
 
         Message::DB(db_msg) => match db_msg {
             DBMessage::PoolReady(pool) => {
                 info!("pool ready");
-                state.pool = Some(pool);
-                Task::none()
+                state.pool = Some(pool.clone());
+                // Kick off an initial load of the container forest as soon as
+                // we have a pool to query.
+                Task::future(async move {
+                    let result = get_all_containers(&pool).await;
+                    Message::DB(DBMessage::AllContainersRetrieved(
+                        result.map_err(|e| e.to_string()),
+                    ))
+                })
             }
 
             // Commands (incoming)
@@ -98,7 +134,7 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                         }
                         Err(err) => {
                             error!("Error adding: {err}");
-                            Message::DB(DBMessage::TerrainAdded(Err(err.to_string())))
+                            Message::DB(DBMessage::MiniAdded(Err(err.to_string())))
                         }
                     }
                 }),
@@ -151,6 +187,32 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 }),
                 None => {
                     error!("No pool to add to");
+                    Task::none()
+                }
+            },
+
+            DBMessage::GetAllContainers => match state.pool.clone() {
+                Some(pool) => Task::future(async move {
+                    let result = get_all_containers(&pool).await;
+                    Message::DB(DBMessage::AllContainersRetrieved(
+                        result.map_err(|e| e.to_string()),
+                    ))
+                }),
+                None => {
+                    error!("No pool to load containers from.");
+                    Task::none()
+                }
+            },
+
+            DBMessage::GetContainerContents(container_id) => match state.pool.clone() {
+                Some(pool) => Task::future(async move {
+                    let result = get_container_contents(&pool, container_id).await;
+                    Message::DB(DBMessage::ContainerContentsRetrieved(
+                        result.map_err(|e| e.to_string()),
+                    ))
+                }),
+                None => {
+                    error!("No pool to load container contents from.");
                     Task::none()
                 }
             },
@@ -221,13 +283,36 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 }
                 Task::none()
             }
-            DBMessage::ContainerAdded(container) => {
-                match container {
-                    Ok(container) => {
-                        info!("Container added: {:?}", container);
+            DBMessage::ContainerAdded(container) => match container {
+                Ok(container) => {
+                    info!("Container added: {:?}", container);
+                    state.container_state.add_container_state.name_input.clear();
+                    // Refresh the forest so the new container shows up in the tree.
+                    Task::future(async { Message::DB(DBMessage::GetAllContainers) })
+                }
+                Err(err) => {
+                    error!("Error adding a container!\nError: {err}");
+                    Task::none()
+                }
+            },
+            DBMessage::AllContainersRetrieved(result) => {
+                match result {
+                    Ok(containers) => {
+                        state.containers = build_forest(containers);
                     }
                     Err(err) => {
-                        error!("Error adding a container!\nError: {err}");
+                        error!("Error loading containers: {err}");
+                    }
+                }
+                Task::none()
+            }
+            DBMessage::ContainerContentsRetrieved(result) => {
+                match result {
+                    Ok(contents) => {
+                        state.container_state.contents = Some(contents);
+                    }
+                    Err(err) => {
+                        error!("Error loading container contents: {err}");
                     }
                 }
                 Task::none()

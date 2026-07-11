@@ -89,6 +89,7 @@ pub async fn get_all_terrain(pool: &SqlitePool) -> Result<Vec<Terrain>, sqlx::Er
     Ok(terrain)
 }
 
+#[derive(Debug, Clone)]
 pub struct ContainerContents {
     pub container: Container,
     pub child_containers: Vec<Container>,
@@ -177,4 +178,12 @@ pub async fn get_root_containers(pool: &SqlitePool) -> Result<Vec<Container>, sq
     )
     .fetch_all(pool)
     .await
+}
+
+/// Fetches every container in the DB in one shot. Pair this with
+/// `container::build_forest` to reconstruct the full tree client-side.
+pub async fn get_all_containers(pool: &SqlitePool) -> Result<Vec<Container>, sqlx::Error> {
+    sqlx::query_as!(Container, "SELECT id, name, parent_id FROM containers")
+        .fetch_all(pool)
+        .await
 }
