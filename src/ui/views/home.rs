@@ -1,87 +1,57 @@
-use iced::Element;
-use iced::widget::{button, container, pick_list, row, text, text_input};
+use iced::Color;
+use iced::widget::{
+    button, column, container, mouse_area, opaque, pick_list, row, stack, text, text_input,
+};
+use iced::{Element, Length};
 
-use crate::ui::messages::{DBMessage, Message, UIMessage};
+use crate::ui::messages::{Message, UIMessage};
 use crate::ui::state::{App, ObjectType};
 
 pub fn view(state: &App) -> Element<'_, Message> {
-    let object_types = [ObjectType::Mini, ObjectType::Terrain];
-    row![
-        container(text!("HOME")),
+    let base: Element<'_, Message> = row![
+        container(button("Add").on_press(Message::UI(UIMessage::AddPanelOpened))),
         container(button("Containers").on_press(Message::UI(UIMessage::NavigateContainers))),
-        container(
-            text_input(
-                "Input name here",
-                &state.home_state.add_object_state.name_input
-            )
-            .on_input(|value| Message::UI(UIMessage::MiniNameInputChanged(value)))
-        ),
-        // Add object button logic, dependent on state
-        match &state.home_state.add_object_state.object_type {
-            Some(object) => {
-                match object {
-                    crate::ui::state::ObjectType::Mini => {
-                        container(button("Add").on_press(Message::DB(DBMessage::AddMini(
-                            state.home_state.add_object_state.name_input.to_string(),
-                            None,
-                            32,
-                        ))))
-                    }
-                    crate::ui::state::ObjectType::Terrain => {
-                        container(button("Add").on_press(Message::DB(DBMessage::AddTerrain(
-                            state.home_state.add_object_state.name_input.to_string(),
-                            None,
-                        ))))
-                    }
-                }
-            }
-            None => {
-                container(button("Add"))
-            }
-        },
-        match &state.home_state.add_object_state.object_type {
-            Some(object) => {
-                match object {
-                    crate::ui::state::ObjectType::Mini => container(button("Remove").on_press(
-                        Message::DB(DBMessage::RemoveAllMatchingMinis(
-                            state.home_state.add_object_state.name_input.to_string(),
-                        )),
-                    )),
-                    crate::ui::state::ObjectType::Terrain => container(button("Remove").on_press(
-                        Message::DB(DBMessage::RemoveAllMatchingTerrain(
-                            state.home_state.add_object_state.name_input.to_string(),
-                        )),
-                    )),
-                }
-            }
-            None => {
-                container(button("Remove"))
-            }
-        },
-        match &state.home_state.add_object_state.object_type {
-            Some(object) => {
-                match object {
-                    crate::ui::state::ObjectType::Mini => {
-                        container(button("List").on_press(Message::DB(DBMessage::GetAllMinis)))
-                    }
-                    crate::ui::state::ObjectType::Terrain => {
-                        container(button("List").on_press(Message::DB(DBMessage::GetAllTerrain)))
-                    }
-                }
-            }
-            None => {
-                container(button("List"))
-            }
-        },
-        container(
-            pick_list(
-                object_types,
-                state.home_state.add_object_state.object_type,
-                |selected| Message::UI(UIMessage::AddMiniTypeSelected(Some(selected)))
-            )
-            .placeholder("Object type")
-        )
     ]
     .spacing(10)
-    .into()
+    .into();
+
+    if !state.home_state.add_panel_open {
+        return base;
+    }
+
+    let backdrop = mouse_area(
+        container(text(""))
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(|_| container::Style {
+                background: Some(Color::from_rgba(0.0, 0.0, 0.0, 0.5).into()),
+                ..Default::default()
+            }),
+    )
+    .on_press(Message::UI(UIMessage::AddPanelClosed));
+
+    let form_card = container(
+        column![
+            text("Add object").size(20),
+            text_input("Name", &state.home_state.add_object_state.name_input)
+                .on_input(|v| Message::UI(UIMessage::MiniNameInputChanged(v))),
+            pick_list(
+                [ObjectType::Mini, ObjectType::Terrain],
+                state.home_state.add_object_state.object_type,
+                |sel| Message::UI(UIMessage::AddMiniTypeSelected(Some(sel)))
+            ),
+            button("Close").on_press(Message::UI(UIMessage::AddPanelClosed)),
+        ]
+        .spacing(10),
+    )
+    .padding(20)
+    .style(container::rounded_box);
+
+    let centered_form = container(form_card)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .center_x(Length::Fill)
+        .center_y(Length::Fill);
+
+    stack![base, opaque(backdrop), opaque(centered_form)].into()
 }

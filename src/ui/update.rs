@@ -4,9 +4,9 @@ use iced::Task;
 use tracing::{debug, error, info};
 
 use crate::db::{
-    container::build_forest, get_all_containers, get_all_minis, get_all_terrain,
-    get_container_contents, insert_container, insert_mini, insert_terrain,
-    remove_all_matching_minis, remove_all_matching_terrain,
+    add_mini_to_container, container::build_forest, get_all_containers, get_all_minis,
+    get_all_terrain, get_container_contents, insert_container, insert_mini, insert_terrain,
+    remove_all_matching_minis, remove_all_matching_terrain, remove_container,
 };
 use crate::ui::{
     messages::{DBMessage, Message, UIMessage},
@@ -45,12 +45,32 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 state.container_state.selected = Some(id);
                 // Clear stale detail while the fresh contents load.
                 state.container_state.contents = None;
-                Task::future(async move {
-                    Message::DB(DBMessage::GetContainerContents(id))
-                })
+                Task::future(async move { Message::DB(DBMessage::GetContainerContents(id)) })
             }
             UIMessage::ContainerNameInputChanged(value) => {
                 state.container_state.add_container_state.name_input = value;
+                Task::none()
+            }
+
+            UIMessage::ContainerContextMenuToggled(id) => {
+                state.container_state.context_menu_open_for =
+                    if state.container_state.context_menu_open_for == Some(id) {
+                        None
+                    } else {
+                        Some(id)
+                    };
+                Task::none()
+            }
+            UIMessage::ContainerContextMenuClosed => {
+                state.container_state.context_menu_open_for = None;
+                Task::none()
+            }
+            UIMessage::AddPanelOpened => {
+                state.home_state.add_panel_open = true;
+                Task::none()
+            }
+            UIMessage::AddPanelClosed => {
+                state.home_state.add_panel_open = false;
                 Task::none()
             }
         },
@@ -191,6 +211,20 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 }
             },
 
+            DBMessage::RemoveContainer(container_id) => match state.pool.clone() {
+                Some(pool) => Task::future(async move {
+                    let result = remove_container(&pool, container_id).await;
+                    match result {
+                        Ok(_) => Message::DB(DBMessage::ContainerRemoved(Ok(container_id))),
+                        Err(err) => Message::DB(DBMessage::ContainerRemoved(Err(err.to_string()))),
+                    }
+                }),
+                None => {
+                    error!("No pool to remove from.");
+                    Task::none()
+                }
+            },
+
             DBMessage::GetAllContainers => match state.pool.clone() {
                 Some(pool) => Task::future(async move {
                     let result = get_all_containers(&pool).await;
@@ -287,11 +321,31 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 Ok(container) => {
                     info!("Container added: {:?}", container);
                     state.container_state.add_container_state.name_input.clear();
+                    state.container_state.context_menu_open_for = None;
                     // Refresh the forest so the new container shows up in the tree.
                     Task::future(async { Message::DB(DBMessage::GetAllContainers) })
                 }
                 Err(err) => {
                     error!("Error adding a container!\nError: {err}");
+                    Task::none()
+                }
+            },
+            DBMessage::ContainerRemoved(result) => match result {
+                Ok(removed_id) => {
+                    info!("Container removed: {removed_id}");
+                    if state.container_state.selected == Some(removed_id) {
+                        state.container_state.selected = None;
+                        state.container_state.contents = None;
+                    }
+                    if state.container_state.context_menu_open_for == Some(removed_id) {
+                        state.container_state.context_menu_open_for = None;
+                    }
+                    state.container_state.expanded.remove(&removed_id);
+                    // Refresh the forest so the removed container disappears from the tree.
+                    Task::future(async { Message::DB(DBMessage::GetAllContainers) })
+                }
+                Err(err) => {
+                    error!("Error removing container: {err}");
                     Task::none()
                 }
             },
@@ -317,6 +371,40 @@ pub fn update(state: &mut App, message: Message) -> Task<Message> {
                 }
                 Task::none()
             }
+            DBMessage::AddMiniToContainer(name, file_location, base_size, container_id) => {
+                match state.pool.clone() {
+                    Some(pool) => Task::future(async move {
+                        let result = insert_mini(&pool, name, file_location, base_size).await;
+                        match result {
+                            Ok(mini) => {
+                                let _ = add_mini_to_container(&pool, mini.id, container_id).await;
+                                Message::DB(DBMessage::MiniAddedToContainer(Ok(mini)))
+                            }
+                            Err(err) => {
+                                Message::DB(DBMessage::MiniAddedToContainer(Err(err.to_string())))
+                            }
+                        }
+                    }),
+                    None => Task::none(),
+                }
+            }
+
+            DBMessage::MiniAddedToContainer(result) => match result {
+                Ok(mini) => {
+                    info!("Mini added to container: {:?}", mini);
+                    state.container_state.add_mini_input.clear();
+                    if let Some(id) = state.container_state.selected {
+                        return Task::future(async move {
+                            Message::DB(DBMessage::GetContainerContents(id))
+                        });
+                    }
+                    Task::none()
+                }
+                Err(err) => {
+                    error!("{err}");
+                    Task::none()
+                }
+            },
         },
     }
 }

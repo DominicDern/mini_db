@@ -187,3 +187,45 @@ pub async fn get_all_containers(pool: &SqlitePool) -> Result<Vec<Container>, sql
         .fetch_all(pool)
         .await
 }
+
+/// Deletes a single container row. Note: this does not cascade — if the
+/// container still has child containers, minis, or terrain referencing it,
+/// the delete will fail with a foreign key error rather than silently
+/// orphaning or cascading. Remove/move descendants first if needed.
+pub async fn remove_container(pool: &SqlitePool, container_id: i64) -> Result<u64, sqlx::Error> {
+    let affected_rows = sqlx::query!("DELETE FROM containers WHERE id = ?", container_id)
+        .execute(pool)
+        .await?
+        .rows_affected();
+    Ok(affected_rows)
+}
+
+pub async fn add_mini_to_container(
+    pool: &SqlitePool,
+    mini_id: i64,
+    container_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "INSERT OR IGNORE INTO mini_locations (mini_id, container_id) VALUES (?, ?)",
+        mini_id,
+        container_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn add_terrain_to_container(
+    pool: &SqlitePool,
+    terrain_id: i64,
+    container_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "INSERT OR IGNORE INTO terrain_locations (terrain_id, container_id) VALUES (?, ?)",
+        terrain_id,
+        container_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}

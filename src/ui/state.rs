@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
+use crate::db::ContainerContents;
 use crate::db::container::ContainerNode;
 use crate::db::id::Id;
-use crate::db::ContainerContents;
 use crate::ui::messages::{DBMessage, Message};
 
 use iced::Task;
@@ -44,6 +44,7 @@ pub enum Page {
 #[derive(Debug, Clone, Default)]
 pub struct HomeState {
     pub add_object_state: AddObjectState,
+    pub add_panel_open: bool, // controls the overlay
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -79,13 +80,17 @@ impl Default for AddObjectState {
 
 /// UI state for the containers page: which node is selected, which nodes are
 /// expanded in the tree, the currently-loaded detail contents for the
-/// selection, and the inline "add container" form.
+/// selection, the inline "add container" form, and which node (if any) has
+/// its right-click context menu open.
 #[derive(Debug, Clone, Default)]
 pub struct ContainerState {
     pub selected: Option<Id>,
     pub expanded: HashSet<Id>,
     pub contents: Option<ContainerContents>,
     pub add_container_state: AddContainerState,
+    pub context_menu_open_for: Option<Id>,
+    pub add_mini_input: String,
+    pub add_terrain_input: String,
 }
 
 #[derive(Debug, Clone)]

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use iced::widget::{button, column, container, row, scrollable, text, text_input};
+use iced::widget::{button, column, container, mouse_area, row, scrollable, text, text_input};
 use iced::{Element, Length};
 
 use crate::db::container::{ContainerNode, find_path};
@@ -17,6 +17,8 @@ pub fn view(state: &App) -> Element<'_, Message> {
                 node,
                 &state.container_state.expanded,
                 state.container_state.selected,
+                state.container_state.context_menu_open_for,
+                &state.container_state.add_container_state.name_input,
                 0,
             )
         })
@@ -51,34 +53,35 @@ pub fn view(state: &App) -> Element<'_, Message> {
 
 /// Recursively renders one node of the forest, plus its children if expanded.
 /// A chevron button toggles expansion; clicking the name selects the
-/// container (loading its detail in the right-hand panel).
+/// container (loading its detail in the right-hand panel); right-clicking
+/// the row opens an inline context menu with add/remove actions.
 fn render_node<'a>(
     node: &'a ContainerNode,
     expanded: &HashSet<Id>,
     selected: Option<Id>,
+    context_menu_open_for: Option<Id>,
+    name_input: &'a str,
     depth: u16,
 ) -> Element<'a, Message> {
-    let is_expanded = expanded.contains(&node.container.id);
+    let id = node.container.id;
+    let is_expanded = expanded.contains(&id);
     let has_children = !node.children.is_empty();
 
     let chevron: Element<'_, Message> = if has_children {
         button(text(if is_expanded { "▼" } else { "▶" }))
-            .on_press(Message::UI(UIMessage::ContainerExpandToggled(
-                node.container.id,
-            )))
+            .on_press(Message::UI(UIMessage::ContainerExpandToggled(id)))
             .into()
     } else {
         text("  ").into()
     };
 
-    let label = if selected == Some(node.container.id) {
+    let label = if selected == Some(id) {
         format!("[{}]", node.container.name)
     } else {
         node.container.name.clone()
     };
 
-    let name_button =
-        button(text(label)).on_press(Message::UI(UIMessage::ContainerSelected(node.container.id)));
+    let name_button = button(text(label)).on_press(Message::UI(UIMessage::ContainerSelected(id)));
 
     let indent = iced::Padding {
         top: 0.0,
@@ -86,17 +89,82 @@ fn render_node<'a>(
         bottom: 0.0,
         left: depth as f32 * 16.0,
     };
-    let this_row = container(row![chevron, name_button].spacing(4)).padding(indent);
+
+    // Right-clicking anywhere on the row toggles this node's context menu.
+    let row_content = mouse_area(row![chevron, name_button].spacing(4))
+        .on_right_press(Message::UI(UIMessage::ContainerContextMenuToggled(id)));
+
+    let this_row = container(row_content).padding(indent);
 
     let mut items: Vec<Element<'_, Message>> = vec![this_row.into()];
 
+    if context_menu_open_for == Some(id) {
+        items.push(context_menu(id, name_input, depth));
+    }
+
     if is_expanded {
         for child in &node.children {
-            items.push(render_node(child, expanded, selected, depth + 1));
+            items.push(render_node(
+                child,
+                expanded,
+                selected,
+                context_menu_open_for,
+                name_input,
+                depth + 1,
+            ));
         }
     }
 
     column(items).spacing(2).into()
+}
+
+/// The inline right-click menu for a tree node: add a child here, add a new
+/// root container, or remove this node. Add actions reuse whatever name is
+/// currently typed into the "add container" form.
+fn context_menu<'a>(id: Id, name_input: &'a str, depth: u16) -> Element<'a, Message> {
+    let name_is_empty = name_input.trim().is_empty();
+
+    let add_here: Element<'_, Message> = if name_is_empty {
+        button("Add here").into()
+    } else {
+        button("Add here")
+            .on_press(Message::DB(DBMessage::AddContainer(
+                name_input.to_string(),
+                Some(id),
+            )))
+            .into()
+    };
+
+    let add_root: Element<'_, Message> = if name_is_empty {
+        button("Add root container").into()
+    } else {
+        button("Add root container")
+            .on_press(Message::DB(DBMessage::AddContainer(
+                name_input.to_string(),
+                None,
+            )))
+            .into()
+    };
+
+    let remove = button("Remove")
+        .on_press(Message::DB(DBMessage::RemoveContainer(id)));
+
+    let indent = iced::Padding {
+        top: 0.0,
+        right: 0.0,
+        bottom: 0.0,
+        left: depth as f32 * 16.0 + 20.0,
+    };
+
+    container(
+        column![
+            text("Type a name in the form below, then:"),
+            row![add_here, add_root, remove].spacing(8),
+        ]
+        .spacing(4),
+    )
+    .padding(indent)
+    .into()
 }
 
 fn detail_panel(state: &App) -> Element<'_, Message> {

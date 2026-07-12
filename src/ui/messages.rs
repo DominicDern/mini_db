@@ -25,6 +25,13 @@ pub enum UIMessage {
     ContainerExpandToggled(Id), // expand/collapse a node in the tree
     ContainerSelected(Id),      // click a node's name to select it
     ContainerNameInputChanged(String), // "add container" name field
+
+    // Right-click context menu on a tree node
+    ContainerContextMenuToggled(Id), // right-click a node to open/close its menu
+    ContainerContextMenuClosed,      // dismiss whatever menu is open
+    // UIMessage additions
+    AddPanelOpened, // click "Add" on Home
+    AddPanelClosed, // dismiss overlay
 }
 
 #[derive(Debug, Clone)]
@@ -43,8 +50,10 @@ pub enum DBMessage {
     RemoveAllMatchingTerrain(String),   // name
     GetAllTerrain,
     AddContainer(String, Option<Id>), // name, parent_id
+    RemoveContainer(Id),              // delete a container node
     GetAllContainers,                 // load/refresh the whole container forest
     GetContainerContents(Id),         // load detail (children/minis/terrain) for one container
+    AddMiniToContainer(String, Option<String>, u16, Id), // name, file_location, base_size, container_id
 
     // Results (incoming)
     DatabaseLoaded(App),
@@ -55,6 +64,8 @@ pub enum DBMessage {
     TerrainRemoved(Result<(String, u64), String>), // (name of removed mini, number of minis removed), error string
     AllTerrainRetrieved(Result<Vec<Terrain>, String>), // <Terrains, Error string>
     ContainerAdded(Result<Container, String>),     // <Container, Error string>
+    ContainerRemoved(Result<Id, String>),          // id of the removed container
     AllContainersRetrieved(Result<Vec<Container>, String>), // whole forest, flat
     ContainerContentsRetrieved(Result<ContainerContents, String>), // detail for selected container
+    MiniAddedToContainer(Result<Mini, String>),
 }
